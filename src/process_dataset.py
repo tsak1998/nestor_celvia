@@ -1,4 +1,7 @@
+from multiprocessing import Pool
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+
 from openslide import OpenSlide
 import h5py
 from tqdm import tqdm
@@ -25,15 +28,22 @@ def process_slide(slide_pth: Path) -> None:
     slide_id = slide_pth.stem
 
     svs_image = OpenSlide(next(slide_pth.glob('*.svs')))
+
     tile_metadata = extract_tiles(svs_image=svs_image,
                                   tile_size=tile_size,
                                   slide_id=slide_id)
 
-    # save_patches_to_hdf5(tile_metadata, slide_id)
+    save_patches_to_hdf5(tile_metadata, slide_id)
 
 
 if __name__ == '__main__':
-    for slide_pth in tqdm(raw_slide_pth.glob('*')):
-        if slide_pth.is_dir():
 
-            process_slide(slide_pth=slide_pth)
+    all_slides = [
+        slide_pth for slide_pth in raw_slide_pth.glob('*')
+        if slide_pth.is_dir()
+    ]
+
+    with Pool() as pool:
+        for _ in tqdm(pool.imap(process_slide, all_slides),
+                      total=len(all_slides)):
+            pass

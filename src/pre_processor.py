@@ -63,11 +63,11 @@ def extract_tiles(
 
             mask = create_tissue_mask(region_ar)
 
-            flat_arr = np.array(region_ar).flatten()
+            region_size = 65536
 
             # semi empty noisy tiles
-            bw_condition = flat_arr.shape[0] != (((flat_arr == 0).sum() +
-                                                  (flat_arr > 210).sum()))
+            bw_condition = region_size != (((region_ar == 0).sum() +
+                                            (region_ar > 210).sum()))
 
             if (np.mean(region_ar) < mask_threshold) and bw_condition:
 
