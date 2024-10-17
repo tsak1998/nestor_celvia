@@ -24,16 +24,21 @@ def save_patches_to_hdf5(tile_metadata, slide_id):
 
 
 def process_slide(slide_pth: Path) -> None:
-
     slide_id = slide_pth.stem
+    try:
 
-    svs_image = OpenSlide(next(slide_pth.glob('*.svs')))
+        svs_image = OpenSlide(next(slide_pth.glob('*.svs')))
 
-    tile_metadata = extract_tiles(svs_image=svs_image,
-                                  tile_size=tile_size,
-                                  slide_id=slide_id)
+        tile_metadata = extract_tiles(svs_image=svs_image,
+                                      tile_size=tile_size,
+                                      slide_id=slide_id)
 
-    save_patches_to_hdf5(tile_metadata, slide_id)
+        save_patches_to_hdf5(tile_metadata, slide_id)
+    except Exception as e:
+        print('=================')
+        print(e)
+        print(slide_id)
+        return None
 
 
 if __name__ == '__main__':
