@@ -12,12 +12,13 @@ from PIL import Image
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
 
-_type = "pretrained"
+embeddings_type = "pretrained"
 
 base_tile_pth = Path("/Users/tsakalis/ntua/nestor/nestor_celvia/src/tiles/")
 base_embeddings_pth = Path(
-    f"/Users/tsakalis/ntua/nestor/nestor_celvia/src/extracted_embeddings_{_type}/"
+    f"/Users/tsakalis/ntua/nestor/nestor_celvia/src/extracted_embeddings_{embeddings_type}/"
 )
 base_embeddings_pth.mkdir(parents=True, exist_ok=True)
 
@@ -74,7 +75,7 @@ if __name__ == '__main__':
     dataset = SampleGroupedDataset(base_tile_pth, sample_ids, transform=None)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-    for batch in dataloader:
+    for batch in tqdm(dataloader, total=len(dataloader)):
         sample_id, batch_tensor = batch
 
         with torch.no_grad():
@@ -85,4 +86,4 @@ if __name__ == '__main__':
 
             torch.save(image_embedding.to('cpu'),
                        base_embeddings_pth / f"{sample_id[0]}.pt")
-            break
+        break
