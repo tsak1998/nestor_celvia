@@ -10,8 +10,8 @@ from openslide import OpenSlide
 from PIL import Image
 
 level = 0
-tiles_path = Path('tiles')
-msk_pth = Path('binary_masks')
+tiles_path = Path('F:/process_data/tiles')
+msk_pth = Path('F:/process_data/binary_masks')
 
 
 class TileData(TypedDict):
@@ -69,7 +69,7 @@ def extract_tiles(
             region = svs_image.read_region((x, y), level,
                                            (tile_size, tile_size))
             
-            print(time.time()-t1)
+            # print(time.time()-t1)
 
             region_ar = np.array(region.convert("RGB"))
 

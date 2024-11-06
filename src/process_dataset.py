@@ -1,3 +1,5 @@
+import os
+os.add_dll_directory(r'C:\openslide-bin-4.0.0.6-windows-x64\bin')
 from multiprocessing import Pool
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -5,13 +7,18 @@ from concurrent.futures import ThreadPoolExecutor
 from openslide import OpenSlide
 import h5py
 from tqdm import tqdm
-
 from pre_processor import extract_tiles
+import warnings
 
-raw_slide_pth = Path('../ovarian_tissue_data/')
-tile_metadata_pth = Path('tile_metadata')
-tiles_pth = Path('tiles')
-tile_size = 256
+# Suppress all warnings
+warnings.filterwarnings("ignore")
+import sys
+sys.stderr = open(os.devnull, 'w')
+
+raw_slide_pth = Path('F:/ovarian_data/')
+tile_metadata_pth = Path('F:/process_data/tile_metadata')
+tiles_pth = Path('F:/process_data/tiles')
+tile_size = 1024
 
 
 def save_patches_to_hdf5(tile_metadata, slide_id):
