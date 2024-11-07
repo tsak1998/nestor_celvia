@@ -16,9 +16,9 @@ from tqdm import tqdm
 
 embeddings_type = "pretrained"
 
-base_tile_pth = Path("/Users/tsakalis/ntua/nestor/nestor_celvia/src/tiles/")
+base_tile_pth = Path("F:/process_data/tiles/")
 base_embeddings_pth = Path(
-    f"/Users/tsakalis/ntua/nestor/nestor_celvia/src/extracted_embeddings_{embeddings_type}/"
+    f"F:/extracted_embeddings_{embeddings_type}/"
 )
 base_embeddings_pth.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +62,7 @@ device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
 if __name__ == '__main__':
 
-    MedSAM_CKPT_PATH = "/Users/tsakalis/ntua/nestor/nestor_celvia/medsam_pretrained_weights/medsam_vit_b.pth"
+    MedSAM_CKPT_PATH = r"C:\Users\user\Documents\nestor_celvia\MedSAM\work_dir\MedSAM\sam_vit_b_01ec64.pth"
 
     medsam_model = sam_model_registry['vit_b'](checkpoint=MedSAM_CKPT_PATH)
     medsam_model = medsam_model.to(device)
@@ -86,4 +86,3 @@ if __name__ == '__main__':
 
             torch.save(image_embedding.to('cpu'),
                        base_embeddings_pth / f"{sample_id[0]}.pt")
-        break
