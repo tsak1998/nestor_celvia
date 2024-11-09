@@ -32,7 +32,7 @@ class SampleGroupedDataset(Dataset):
         # Collect images grouped by sample directory
         for sample_id in sample_ids:
             sample_path = base_tile_path / sample_id
-            image_paths = list(sample_path.glob('*.jpeg'))[:2]
+            image_paths = list(sample_path.glob('*.jpeg'))
             if image_paths:
                 self.samples.append((sample_id.stem, image_paths))
 
@@ -40,7 +40,6 @@ class SampleGroupedDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        # breakpoint()
         sample_id, image_paths = self.samples[idx]
 
         images = []
@@ -69,6 +68,7 @@ if __name__ == '__main__':
     medsam_model.eval()
 
     batch_size = 1  # Hacky way to get all slide tiles into same batch
+    chunk_size = 5
     sample_ids = list(base_tile_pth.glob('*'))
 
     # Create dataset and dataloader
@@ -77,12 +77,17 @@ if __name__ == '__main__':
 
     for batch in tqdm(dataloader, total=len(dataloader)):
         sample_id, batch_tensor = batch
-
+        write_path = base_embeddings_pth/f"{sample_id[0]}_{batch_tensor.shape[1]}"
+        if not os.path.exists(write_path):
+            os.makedirs(write_path)
+        tqdm.write(f"{batch_tensor.shape[1]}, {sample_id[0]}, {batch_tensor.shape}")
+        
         with torch.no_grad():
+            for i in range(0, batch_tensor.shape[1], chunk_size):
+                torch.cuda.empty_cache()
+                chunk_tensor  = batch_tensor[:,i:i+chunk_size,:,:,:].to(device).squeeze(0)
 
-            batch_tensor = batch_tensor.to(device).squeeze(0)
-
-            image_embedding = medsam_model.image_encoder(batch_tensor)
-
-            torch.save(image_embedding.to('cpu'),
-                       base_embeddings_pth / f"{sample_id[0]}.pt")
+                image_embedding = medsam_model.image_encoder(chunk_tensor )
+                
+                torch.save(image_embedding.to('cpu'),
+                        base_embeddings_pth /f'{sample_id[0]}_{batch_tensor.shape[1]}'/f"{sample_id[0]}_{i}_{i+chunk_size}.pt")
