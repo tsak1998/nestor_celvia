@@ -26,6 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 /data client
+/best_vae
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
