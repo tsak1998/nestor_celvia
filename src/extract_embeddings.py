@@ -54,8 +54,6 @@ class SampleGroupedDataset(Dataset):
         return sample_id, image_tensor
 
 
-# Parameters
-# base_tile_path = Path('/path/to/base/tile')
 
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
@@ -74,6 +72,7 @@ if __name__ == '__main__':
     # Create dataset and dataloader
     dataset = SampleGroupedDataset(base_tile_pth, sample_ids, transform=None)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
 
     for batch in tqdm(dataloader, total=len(dataloader)):
         sample_id, batch_tensor = batch
