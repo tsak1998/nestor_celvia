@@ -118,7 +118,7 @@ def read_and_concat(full_path, file_num, id):
     return torch.concat(t_list, dim=0)
 
 
-path_feature_vector = os.path.abspath('F:/extracted_embeddings_pretrained/')
+path_feature_vector = os.path.abspath('E:/extracted_embeddings_pretrained/')
 for dir_item in tqdm(os.listdir(path_feature_vector)):
     full_path = os.path.join(path_feature_vector, dir_item)
     id = dir_item.split('_')[0]

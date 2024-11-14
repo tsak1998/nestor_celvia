@@ -18,7 +18,7 @@ embeddings_type = "pretrained"
 
 base_tile_pth = Path("F:/process_data/tiles/")
 base_embeddings_pth = Path(
-    f"F:/extracted_embeddings_{embeddings_type}/"
+    f"E:/extracted_embeddings_{embeddings_type}/"
 )
 base_embeddings_pth.mkdir(parents=True, exist_ok=True)
 
@@ -41,7 +41,6 @@ class SampleGroupedDataset(Dataset):
 
     def __getitem__(self, idx):
         sample_id, image_paths = self.samples[idx]
-
         images = []
         for img_path in image_paths:
             img_3c = np.array(Image.open(img_path))
@@ -79,7 +78,7 @@ if __name__ == '__main__':
         write_path = base_embeddings_pth/f"{sample_id[0]}_{batch_tensor.shape[1]}"
         if not os.path.exists(write_path):
             os.makedirs(write_path)
-        tqdm.write(f"{batch_tensor.shape[1]}, {sample_id[0]}, {batch_tensor.shape}")
+        # tqdm.write(f"{batch_tensor.shape[1]}, {sample_id[0]}, {batch_tensor.shape}")
         
         with torch.no_grad():
             for i in range(0, batch_tensor.shape[1], chunk_size):
