@@ -104,8 +104,9 @@ def train_model(id, concat_t):
     vae = VAE(latent_dim=1024).to(device)
     vae.load_state_dict(torch.load(f'best_vae/{id}.pth'))
     reconstructed, mu, logvar, agrregated = vae(concat_t)
-    np.save(os.path.join(save_path, f"{id}.npy"), agrregated.detach().cpu().numpy())
-    tqdm.write(f"{id}, loss: {min_loss:.2f}, epoch: {min_loss_idx}")
+    # np.save(os.path.join(save_path, f"{id}.npy"), agrregated.detach().cpu().numpy())
+    # tqdm.write(f"{id}, loss: {min_loss:.2f}, epoch: {min_loss_idx}")
+    return agrregated.detach().cpu().numpy()
 
 
 def round_to_nearest_5(number):
@@ -119,10 +120,18 @@ def read_and_concat(full_path, file_num, id):
 
 
 path_feature_vector = os.path.abspath('E:/extracted_embeddings_pretrained/')
-for dir_item in tqdm(os.listdir(path_feature_vector)):
+save_path = os.path.abspath('F:\latent_vectors')
+
+batch_size = 200
+for i,dir_item in tqdm(enumerate(os.listdir(path_feature_vector)), total=len(os.listdir(path_feature_vector))):
     full_path = os.path.join(path_feature_vector, dir_item)
     id = dir_item.split('_')[0]
     file_num = dir_item.split('_')[1]
-    
     concat_t = read_and_concat(full_path, file_num, id)
-    train_model(id, concat_t)
+    
+    aggregated_all = []
+    for b in range(0,concat_t.shape[0], batch_size):
+        batch_t = concat_t[b:b+batch_size,:,:,:]
+        aggregated_all.append(train_model(id, batch_t))
+    aggregated_all_final = np.mean(aggregated_all, axis=0)
+    np.save(os.path.join(save_path, f"{id}.npy"), aggregated_all_final)
