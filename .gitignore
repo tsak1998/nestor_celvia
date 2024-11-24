@@ -166,6 +166,7 @@ cython_debug/
 
 .DS_Store
 binary_masks
+vae_embeddings
 medsam_vit_b.pth
 
 *.pt
