@@ -1,0 +1,14 @@
+{
+  "base_keymap": "VSCode",
+  "languages": {
+    "Python": {
+      "formatter": {
+        "external": {
+          "command": "ruff",
+          "arguments": ["format", "-"]
+        }
+      },
+      "format_on_save": "on"
+    }
+  }
+}
