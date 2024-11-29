@@ -1,10 +1,16 @@
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm.notebook import tqdm
 import os
-import math
+import torch.nn as nn
+import torch
+from torch.utils.data import Dataset
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+path_feature = os.path.abspath('F:/extracted_embeddings_pretrained_concat')
+save_path = os.path.abspath('F:/latent_vectors_individual/')
+model_save_path = os.path.abspath('C:/Users/user/Documents/nestor_celvia/best_vae_all/')
+device = 'cuda:0'
+
 
 class VAE(nn.Module):
     def __init__(self, latent_dim=1024):
@@ -64,9 +70,9 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
-        aggregated_z = self.aggregation_layer(z.mean(dim=0))
+        aggregated_z = self.aggregation_layer(z)
         return self.decode(z), mu, logvar, aggregated_z
-
+    
 def vae_loss(recon_x, x, mu, logvar):
     # Reconstruction loss (e.g., MSE)
     recon_loss = F.mse_loss(recon_x, x, reduction='mean')
@@ -74,64 +80,49 @@ def vae_loss(recon_x, x, mu, logvar):
     kld_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return recon_loss + kld_loss
 
-def train_model(id, concat_t):
-    device = 'cuda:0'
-    save_path = os.path.abspath('F:\latent_vectors')
-    vae = VAE(latent_dim=1024).to(device)
-    optimizer = torch.optim.Adam(vae.parameters(), lr=1e-3)
-    concat_t = concat_t.to(device)
-    min_loss = float('inf')
-    min_loss_idx = 0
-    num_epochs = 100
-    for i in range(num_epochs):
-        # Forward pass
-        reconstructed, mu, logvar, _ = vae(concat_t)  # concat_t shape: [88, 256, 64, 64]
+class CustomDataset(Dataset):
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+        self.data_names = os.listdir(data_dir)
+    
+    def __len__(self):
+        return len(self.data_names)
+    
+    def __getitem__(self, idx):
+        data = torch.load(os.path.join(self.data_dir+f"/{self.data_names[idx]}"))
+        return {'data':data, 'id':self.data_names[idx].split('.')[0]}
 
+# Train
+train_dataset = CustomDataset(path_feature)
+trainloader = DataLoader(train_dataset, batch_size=1, shuffle=False)
+vae = VAE(latent_dim=1024).to(device)
+optimizer = torch.optim.Adam(vae.parameters(), lr=1e-3)
+min_loss = float('inf')
+num_epochs = 100
+for epoch in tqdm(range(num_epochs)):
+    for data in trainloader:
+        # Forward pass
+        data = data['data'].squeeze(0).to(device)
+        reconstructed, mu, logvar, _ = vae(data)  # concat_t shape: [88, 256, 64, 64]
         # Loss computation
-        loss = vae_loss(reconstructed, concat_t, mu, logvar)
+        loss = vae_loss(reconstructed, data, mu, logvar)
         loss_np = loss.detach().cpu().numpy().item()
-        
         # Keep best model
         if loss_np < min_loss:
             min_loss = loss_np
-            min_loss_idx = i
-            torch.save(vae.state_dict(), f'best_vae/{id}.pth')  # Save the best model
-
+            torch.save(vae.state_dict(),os.path.join(model_save_path+f'/best_vae.pth'))
         # Backpropagation
         loss.backward()
         optimizer.step()
-    # Load best model and extract latent vector and save
-    vae = VAE(latent_dim=1024).to(device)
-    vae.load_state_dict(torch.load(f'best_vae/{id}.pth'))
-    reconstructed, mu, logvar, agrregated = vae(concat_t)
-    # np.save(os.path.join(save_path, f"{id}.npy"), agrregated.detach().cpu().numpy())
-    # tqdm.write(f"{id}, loss: {min_loss:.2f}, epoch: {min_loss_idx}")
-    return agrregated.detach().cpu().numpy()
+print('Training finished.')
 
-
-def round_to_nearest_5(number):
-    return math.ceil(number / 5) * 5
-
-def read_and_concat(full_path, file_num, id):
-    t_list = []
-    for i in range(0, round_to_nearest_5(int(file_num)), 5):
-        t_list.append(torch.load(os.path.join(full_path, f"{id}_{i}_{i+5}.pt"), map_location="cpu"))
-    return torch.concat(t_list, dim=0)
-
-
-path_feature_vector = os.path.abspath('E:/extracted_embeddings_pretrained/')
-save_path = os.path.abspath('F:/latent_vectors/latent_vectors_individual/')
-
-batch_size = 200
-for i,dir_item in tqdm(enumerate(os.listdir(path_feature_vector)), total=len(os.listdir(path_feature_vector))):
-    full_path = os.path.join(path_feature_vector, dir_item)
-    id = dir_item.split('_')[0]
-    file_num = dir_item.split('_')[1]
-    concat_t = read_and_concat(full_path, file_num, id)
-    
-    aggregated_all = []
-    for b in range(0,concat_t.shape[0], batch_size):
-        batch_t = concat_t[b:b+batch_size,:,:,:]
-        aggregated_all.append(train_model(id, batch_t))
-    aggregated_all_final = np.mean(aggregated_all, axis=0)
-    np.save(os.path.join(save_path, f"{id}.npy"), aggregated_all_final)
+# Infer
+vae = VAE(latent_dim=1024).to(device)
+vae.load_state_dict(torch.load(os.path.join(model_save_path+f'/best_vae.pth')))
+vae.eval()
+with torch.no_grad():
+    for data_t in tqdm(trainloader):
+        data = data_t['data'].squeeze(0).to(device)
+        reconstructed, mu, logvar, agrregated = vae(data)
+        torch.save(agrregated, os.path.join(save_path, f"{data_t['id'][0]}.pt"))
+print('VAE finished.')
