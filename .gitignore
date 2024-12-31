@@ -168,5 +168,5 @@ cython_debug/
 binary_masks
 vae_embeddings
 medsam_vit_b.pth
-
+catboost_info
 *.pt
